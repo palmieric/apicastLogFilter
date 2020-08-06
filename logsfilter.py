@@ -12,7 +12,7 @@ class DateValidator(argparse.Action):
 parser = argparse.ArgumentParser(
     description='Sort and filter an unsorted APICAST log file')
 parser.add_argument('--input', type=str, help='Input file', required=True)
-parser.add_argument('--out', type=str, help='Output file', default='output.log')
+parser.add_argument('--output', type=str, help='Output file', default='output.log')
 parser.add_argument('--start', type=str, help='The start of the interval to '
     'extract in the format %%Y/%%m/%%d %%H:%%M:%%S e.g. 2020/01/08 08:30:05', action=DateValidator)
 parser.add_argument('--end', type=str, help='The end of the interval to '
@@ -22,21 +22,26 @@ args = parser.parse_args()
 
 s = SortedDict()
 
+#06/Aug/2020:14:15:23 +0000
+
+fmts = ['"%Y/%m/%d %H:%M:%S', '%Y/%m/%d %H:%M:%S', '[%d/%b/%Y:%H:%M:%S', '"[%d/%b/%Y:%H:%M:%S']
+
 with open(args.input) as f:
     for line in f:
-        try:
-            s[datetime.strptime(line[1:20], '%Y/%m/%d %H:%M:%S')].append(line)
-        except ValueError:
-            print("Value removed")
-            pass
-        except KeyError:
-            s[datetime.strptime(line[1:20], '%Y/%m/%d %H:%M:%S')] = [line]
+        for fmt in fmts:
+            try:
+                s[datetime.strptime(line[0:len(datetime.today().strftime(fmt))], fmt)].append(line)
+                break
+            except ValueError:
+                pass
+            except KeyError:
+                s[datetime.strptime(line[0:len(datetime.today().strftime(fmt))], fmt)] = [line]
+                break
 
-keys = SortedList(s.keys()).irange(args.start, args.end) if args.start else s.keys()
+keys = (SortedList(s.keys()).irange(args.start, args.end) 
+    if args.start else s.keys())
 
-
-
-with open(args.out, 'w') as f:
+with open(args.output, 'w') as f:
     for k in keys:
         for i in s[k]:
             f.write(i)
