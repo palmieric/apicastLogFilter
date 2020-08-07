@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+import sys
 from datetime import datetime
 from sortedcontainers import SortedDict, SortedList
 
@@ -12,7 +13,7 @@ class DateValidator(argparse.Action):
 parser = argparse.ArgumentParser(
     description='Sort and filter an unsorted APICAST log file')
 parser.add_argument('-i', '--input', type=str, help='Input file', required=True)
-parser.add_argument('-o', '--output', type=str, help='Output file', default='output.log')
+parser.add_argument('-o', '--output', type=str, help='Output file', default=None)
 parser.add_argument('-s', '--start', type=str, help='The start of the interval to '
     'extract in the format %%Y/%%m/%%d %%H:%%M:%%S e.g. 2020/01/08 08:30:05', action=DateValidator)
 parser.add_argument('-e', '--end', type=str, help='The end of the interval to '
@@ -41,9 +42,9 @@ with open(args.input) as f:
 keys = (SortedList(s.keys()).irange(args.start, args.end) 
     if args.start else s.keys())
 
-with open(args.output, 'w') as f:
-    for k in keys:
-        for i in s[k]:
-            f.write(i)
+f = open(args.output, 'w') if args.output else sys.stdout 
 
-print("END")
+for k in keys:
+    for i in s[k]:
+        f.write(i)
+f.close()
